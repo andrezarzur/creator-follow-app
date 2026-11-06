@@ -20,13 +20,14 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: 'node e2e-server.js',
+      command: 'npm run e2e:server',
       cwd: '../backend',
       url: 'http://127.0.0.1:3301/health',
       reuseExistingServer: false,
       timeout: 30_000,
       env: {
         DATABASE_URL: process.env.E2E_DATABASE_URL,
+        PORT: '3301',
       },
     },
     {

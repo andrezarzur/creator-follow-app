@@ -1,32 +1,35 @@
+import type { Server } from 'node:http'
+
 process.env.PORT = '3301'
 
-const { app, db, initializeDatabase } = require('./index')
+import { app, db, initializeDatabase } from './index'
 
 if (!process.env.DATABASE_URL) {
   throw new Error('DATABASE_URL must point to an isolated E2E database')
 }
 
-let server
+let server: Server | undefined
 let shuttingDown = false
 
-async function shutdown() {
+async function shutdown(): Promise<void> {
   if (shuttingDown) return
   shuttingDown = true
 
-  const closeServer = server
-    ? new Promise((resolve) => server.close(resolve))
-    : Promise.resolve()
-  await closeServer
-  await new Promise((resolve, reject) => {
+  if (server) {
+    await new Promise<void>((resolve, reject) => {
+      server?.close((error) => (error ? reject(error) : resolve()))
+    })
+  }
+  await new Promise<void>((resolve, reject) => {
     db.close((error) => (error ? reject(error) : resolve()))
   })
 }
 
 process.on('SIGINT', () => {
-  shutdown().finally(() => process.exit(0))
+  void shutdown().then(() => process.exit(0))
 })
 process.on('SIGTERM', () => {
-  shutdown().finally(() => process.exit(0))
+  void shutdown().then(() => process.exit(0))
 })
 
 initializeDatabase()
@@ -35,7 +38,7 @@ initializeDatabase()
       console.log('Isolated E2E API listening on http://127.0.0.1:3301')
     })
   })
-  .catch((error) => {
+  .catch((error: unknown) => {
     console.error('Failed to initialize isolated E2E database', error)
-    shutdown().finally(() => process.exit(1))
+    void shutdown().then(() => process.exit(1))
   })

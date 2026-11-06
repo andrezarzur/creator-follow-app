@@ -227,6 +227,63 @@ Running 1 test using 1 worker
 
 ---
 
+# Prompt 4
+
+**Ferramenta:** Copilot Standard
+
+**Texto do prompt:**
+
+The application is now functional and all tests are passing. However, I noticed that the backend is implemented in JavaScript, while the technical requirements specify Node.js with TypeScript.
+
+I want you to migrate the existing backend implementation to TypeScript.
+
+Requirements:
+
+- Convert the backend application source code from JavaScript to TypeScript.
+- Configure TypeScript properly, including tsconfig.json and the necessary dependencies.
+- Use strict type checking and appropriate types for request handlers, database operations, and application data.
+- Update the development, build, and start scripts to support TypeScript.
+- Adapt the existing Vitest/Supertest integration tests as necessary.
+- Preserve all existing API endpoints, HTTP status codes, database behavior, and frontend integration.
+- Avoid unnecessary refactoring, architectural changes, or new features.
+- Keep JavaScript configuration files where necessary; focus on migrating application code.
+After the migration:
+
+1. Run the TypeScript type checker.
+2. Verify that the backend builds and starts successfully.
+3. Run all existing API integration tests.
+4. Run the Playwright E2E tests to verify that frontend functionality hasn't been affected.
+5. Report any errors encountered, the fixes applied, and the final test results.
+The goal is a clean TypeScript migration without changing the application's existing behavior.
+
+Finally, update the existing PROMPTS.md to include this fourth prompt, following the same structure and writing style as the previous entries.
+
+Add a new section titled "Prompt 4" containing:
+
+Ferramenta: Copilot Standard
+
+Texto do prompt: The exact text of this entire prompt, including these documentation instructions.
+
+Por que este prompt: Explain that the migration was necessary to align the backend with the challenge's TypeScript requirements.
+
+O que a IA entregou: Summarize the actual changes made during the migration.
+
+O que estava errado ou faltando, e o que você fez: Explain that the original backend was implemented in JavaScript and describe any issues encountered during migration.
+
+Keep the explanations in natural Portuguese, consistent with the existing document. Do not invent test results or manual verification steps.
+
+**Por que este prompt:**
+
+Durante a revisão final, percebi que o backend havia sido implementado em JavaScript, enquanto o enunciado especificava Node.js/TypeScript. Quis corrigir essa diferença sem alterar as funcionalidades que já estavam funcionando.
+
+**O que a IA entregou:**
+
+[Confirmar o resultado real da execução: quais arquivos foram migrados para TypeScript, como ficou a configuração e quais scripts foram atualizados.]
+
+**O que estava errado ou faltando, e o que você fez:**
+
+O backend estava em JavaScript, o que poderia não atender ao requisito de TypeScript do desafio. Solicitei uma migração focada, preservando as rotas, o banco e os testes existentes.
+
 # Decisões que tomei
 
 - **Stack:** escolhi Vue com Vite para o frontend, Node.js para o backend e SQLite para o banco de dados. Considerei uma combinação simples e suficiente para o escopo do desafio.

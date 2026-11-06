@@ -1,11 +1,14 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
-    "start": "node index.js",
-    "dev": "node --watch index.js",
-    "db:init": "node init-db.js",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "dev": "tsx watch index.ts",
+    "db:init": "node dist/init-db.js",
+    "e2e:server": "tsx e2e-server.ts",
     "test": "vitest run"
   },
   "keywords": [],
@@ -24,7 +27,7 @@
     "@types/express": "^5.0.6",
     "@types/node": "^26.6.6",
     "supertest": "^7.3.1",
-    "ts-node": "^10.9.2",
+    "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vitest": "^5.1.0"
   }

@@ -11,9 +11,10 @@ A small creator-follow application with a Vue 3/Vite frontend, an Express API, a
 
 ```text
 backend/
-  index.js              Express API and SQLite schema/seed initialization
-  init-db.js            Standalone database initializer
-  e2e-server.js         Isolated temporary-database server for browser tests
+  index.ts              Typed Express API and SQLite schema/seed initialization
+  init-db.ts            Standalone database initializer
+  e2e-server.ts         Isolated temporary-database server for browser tests
+  dist/                 Compiled production JavaScript output
   tests/                Vitest + Supertest API integration tests
 frontend/
   src/App.vue           Creator directory and follow interactions
@@ -32,11 +33,12 @@ npm install --prefix backend
 npm install --prefix frontend
 ```
 
-Copy `.env.example` to `.env` and adjust values if needed. The backend defaults to port `3000` and uses `./database.sqlite3` (relative to the project root) when `DATABASE_URL` is unset.
+Copy `.env.example` to `.env` and adjust values if needed. The backend defaults to port `3000`. `DATABASE_URL` paths are relative to the project root; if it is unset, the default database is `backend/data.sqlite3`.
 
 ## Initialize the database
 
 ```sh
+npm --prefix backend run build
 npm --prefix backend run db:init
 ```
 
@@ -48,6 +50,13 @@ Start the backend in one terminal:
 
 ```sh
 npm --prefix backend run dev
+```
+
+For a compiled production server, build and start it:
+
+```sh
+npm --prefix backend run build
+npm --prefix backend start
 ```
 
 Start the Vite frontend in another terminal:
@@ -67,6 +76,12 @@ npm test
 ```
 
 These use Supertest with a real SQLite database created in a temporary directory.
+
+Check backend types without emitting build output:
+
+```sh
+npm --prefix backend run typecheck
+```
 
 Install Playwright Chromium once:
 

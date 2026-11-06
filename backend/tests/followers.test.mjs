@@ -2,11 +2,9 @@ import { randomUUID } from 'node:crypto'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
-import { createRequire } from 'node:module'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import supertest from 'supertest'
 
-const require = createRequire(import.meta.url)
 const originalDatabaseUrl = process.env.DATABASE_URL
 let temporaryDirectory
 let app
@@ -43,7 +41,7 @@ describe('creator followers API', () => {
   beforeAll(async () => {
     temporaryDirectory = mkdtempSync(path.join(tmpdir(), 'creator-follow-api-'))
     process.env.DATABASE_URL = path.join(temporaryDirectory, 'integration.sqlite')
-    ;({ app, db, initializeDatabase } = require('../index.js'))
+    ;({ app, db, initializeDatabase } = await import('../index.ts'))
     await initializeDatabase()
     const creator = await get('SELECT uuid FROM creators ORDER BY created_at LIMIT 1')
     creatorId = creator.uuid

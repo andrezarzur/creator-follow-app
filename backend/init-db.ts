@@ -1,4 +1,4 @@
-const { db, initializeDatabase } = require('./index')
+import { db, initializeDatabase } from './index'
 
 initializeDatabase()
   .then(() => {
@@ -10,9 +10,12 @@ initializeDatabase()
       }
     })
   })
-  .catch((error) => {
+  .catch((error: unknown) => {
     console.error('Failed to initialize database', error)
-    db.close(() => {
+    db.close((closeError) => {
+      if (closeError) {
+        console.error('Failed to close database', closeError)
+      }
       process.exitCode = 1
     })
   })
