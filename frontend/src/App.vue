@@ -15,7 +15,7 @@ const uuidPattern =
 const creators = ref<Creator[]>([])
 const userId = ref('')
 const isLoading = ref(true)
-const busyCreatorId = ref('')
+const busyCreatorIds = ref(new Set<string>())
 const errorMessage = ref('')
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
@@ -54,6 +54,19 @@ async function loadCreators() {
   )
 }
 
+async function refreshCreator(creatorId: string) {
+  const latestCreators = await request<Creator[]>(
+    `/creators?userId=${encodeURIComponent(userId.value)}`,
+  )
+  const latestCreator = latestCreators.find((item) => item.id === creatorId)
+  const currentCreator = creators.value.find((item) => item.id === creatorId)
+
+  if (latestCreator && currentCreator) {
+    currentCreator.followerCount = latestCreator.followerCount
+    currentCreator.isFollowing = latestCreator.isFollowing
+  }
+}
+
 async function initializeUser() {
   const storedId = localStorage.getItem(userIdStorageKey)
   const id = storedId && uuidPattern.test(storedId) ? storedId : crypto.randomUUID()
@@ -66,28 +79,72 @@ async function initializeUser() {
   userId.value = id
 }
 
-async function toggleFollow(creator: Creator) {
-  if (busyCreatorId.value) return
-
-  busyCreatorId.value = creator.id
+async function loadPage() {
+  isLoading.value = true
   errorMessage.value = ''
   try {
-    if (creator.isFollowing) {
-      await request(`/creators/${creator.id}/followers/${userId.value}`, {
-        method: 'DELETE',
-      })
-    } else {
-      await request(`/creators/${creator.id}/followers`, {
-        method: 'POST',
-        body: JSON.stringify({ userId: userId.value }),
-      })
+    if (!userId.value) {
+      await initializeUser()
     }
     await loadCreators()
   } catch (error) {
     errorMessage.value =
-      error instanceof Error ? error.message : 'Unable to update your follow.'
+      error instanceof Error ? error.message : 'Unable to load creators.'
   } finally {
-    busyCreatorId.value = ''
+    isLoading.value = false
+  }
+}
+
+async function toggleFollow(creator: Creator) {
+  if (busyCreatorIds.value.has(creator.id)) return
+
+  busyCreatorIds.value.add(creator.id)
+  errorMessage.value = ''
+  const following = !creator.isFollowing
+  try {
+    try {
+      if (!following) {
+        await request(`/creators/${creator.id}/followers/${userId.value}`, {
+          method: 'DELETE',
+        })
+      } else {
+        await request(`/creators/${creator.id}/followers`, {
+          method: 'POST',
+          body: JSON.stringify({ userId: userId.value }),
+        })
+      }
+    } catch (error) {
+      errorMessage.value =
+        error instanceof Error ? error.message : 'Unable to update your follow.'
+      try {
+        await refreshCreator(creator.id)
+      } catch (refreshError) {
+        const refreshMessage =
+          refreshError instanceof Error
+            ? refreshError.message
+            : 'Unable to refresh this creator.'
+        errorMessage.value = `${errorMessage.value} ${refreshMessage}`
+      }
+      return
+    }
+
+    creator.isFollowing = following
+    creator.followerCount = Math.max(
+      0,
+      creator.followerCount + (following ? 1 : -1),
+    )
+
+    try {
+      await refreshCreator(creator.id)
+    } catch (refreshError) {
+      const refreshMessage =
+        refreshError instanceof Error
+          ? refreshError.message
+          : 'Unable to refresh this creator.'
+      errorMessage.value = `Your follow was updated, but the follower count could not be refreshed. ${refreshMessage}`
+    }
+  } finally {
+    busyCreatorIds.value.delete(creator.id)
   }
 }
 
@@ -100,17 +157,7 @@ function initials(name: string) {
     .toUpperCase()
 }
 
-onMounted(async () => {
-  try {
-    await initializeUser()
-    await loadCreators()
-  } catch (error) {
-    errorMessage.value =
-      error instanceof Error ? error.message : 'Unable to load creators.'
-  } finally {
-    isLoading.value = false
-  }
-})
+onMounted(loadPage)
 </script>
 
 <template>
@@ -158,6 +205,14 @@ onMounted(async () => {
 
         <p v-if="errorMessage" class="notice notice-error" role="alert">
           {{ errorMessage }}
+          <button
+            v-if="creators.length === 0 && !isLoading"
+            class="retry-button"
+            type="button"
+            @click="loadPage"
+          >
+            Try again
+          </button>
         </p>
         <div v-if="isLoading" class="notice" role="status">Finding your circle…</div>
         <div v-else-if="creators.length === 0" class="notice">
@@ -191,11 +246,11 @@ onMounted(async () => {
               <button
                 :class="['follow-button', { following: creator.isFollowing }]"
                 type="button"
-                :disabled="busyCreatorId !== ''"
+                :disabled="busyCreatorIds.has(creator.id)"
                 :aria-label="`${creator.isFollowing ? 'Unfollow' : 'Follow'} ${creator.name}`"
                 @click="toggleFollow(creator)"
               >
-                <span v-if="busyCreatorId === creator.id" class="button-spinner" aria-hidden="true"></span>
+                <span v-if="busyCreatorIds.has(creator.id)" class="button-spinner" aria-hidden="true"></span>
                 <template v-else>
                   <span aria-hidden="true">{{ creator.isFollowing ? '✓' : '+' }}</span>
                   {{ creator.isFollowing ? 'Unfollow' : 'Follow' }}

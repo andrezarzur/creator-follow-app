@@ -2,6 +2,7 @@
   "name": "privacy-test",
   "private": true,
   "scripts": {
-    "test": "npm --prefix backend test"
+    "test": "npm --prefix backend test",
+    "test:e2e": "npm --prefix frontend run test:e2e"
   }
 }

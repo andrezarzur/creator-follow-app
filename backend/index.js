@@ -90,21 +90,21 @@ async function initializeDatabase() {
     )
   `)
 
-  const creatorCount = await get('SELECT COUNT(*) AS count FROM creators')
-  if (creatorCount.count === 0) {
-    await run('BEGIN TRANSACTION')
-    try {
+  await run('BEGIN IMMEDIATE TRANSACTION')
+  try {
+    const creatorCount = await get('SELECT COUNT(*) AS count FROM creators')
+    if (creatorCount.count === 0) {
       for (const name of creatorsToSeed) {
         await run(
           'INSERT INTO creators (uuid, name, created_at) VALUES (?, ?, ?)',
           [crypto.randomUUID(), name, new Date().toISOString()],
         )
       }
-      await run('COMMIT')
-    } catch (error) {
-      await run('ROLLBACK')
-      throw error
     }
+    await run('COMMIT')
+  } catch (error) {
+    await run('ROLLBACK')
+    throw error
   }
 }
 
@@ -132,6 +132,10 @@ async function findUser(userId, response) {
 
 app.use(cors())
 app.use(express.json())
+
+app.get('/health', (request, response) => {
+  response.json({ status: 'ok' })
+})
 
 app.post('/users/anonymous', async (request, response) => {
   const { id } = request.body ?? {}
