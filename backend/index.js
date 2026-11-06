@@ -189,15 +189,23 @@ app.post('/creators/:creatorId/followers', async (request, response) => {
   if (!(await findCreator(creatorId, response))) return
   if (!(await findUser(userId, response))) return
 
-  const result = await run(
-    'INSERT OR IGNORE INTO followers (creator_id, user_id, created_at) VALUES (?, ?, ?)',
-    [creatorId, userId, new Date().toISOString()],
-  )
-  response.status(result.changes ? 201 : 200).json({
-    creatorId,
-    userId,
-    following: true,
-  })
+  try {
+    await run(
+      'INSERT INTO followers (creator_id, user_id, created_at) VALUES (?, ?, ?)',
+      [creatorId, userId, new Date().toISOString()],
+    )
+  } catch (error) {
+    if (
+      error.code === 'SQLITE_CONSTRAINT' &&
+      error.message.includes('UNIQUE constraint failed: followers.creator_id, followers.user_id')
+    ) {
+      response.status(409).json({ error: 'User already follows this creator' })
+      return
+    }
+    throw error
+  }
+
+  response.status(201).json({ creatorId, userId, following: true })
 })
 
 app.delete('/creators/:creatorId/followers/:userId', async (request, response) => {
@@ -209,11 +217,15 @@ app.delete('/creators/:creatorId/followers/:userId', async (request, response) =
   if (!(await findCreator(creatorId, response))) return
   if (!(await findUser(userId, response))) return
 
-  await run('DELETE FROM followers WHERE creator_id = ? AND user_id = ?', [
+  const result = await run('DELETE FROM followers WHERE creator_id = ? AND user_id = ?', [
     creatorId,
     userId,
   ])
-  response.json({ creatorId, userId, following: false })
+  if (result.changes === 0) {
+    response.status(404).json({ error: 'Follow relationship not found' })
+    return
+  }
+  response.status(204).end()
 })
 
 app.get('/creators/:creatorId/followers/count', async (request, response) => {
@@ -236,6 +248,10 @@ app.use((request, response) => {
 })
 
 app.use((error, request, response, next) => {
+  if (error.type === 'entity.parse.failed') {
+    response.status(400).json({ error: 'Invalid JSON request body' })
+    return
+  }
   console.error(error)
   if (response.headersSent) {
     next(error)
@@ -244,7 +260,7 @@ app.use((error, request, response, next) => {
   response.status(500).json({ error: 'Internal server error' })
 })
 
-module.exports = { db, initializeDatabase }
+module.exports = { app, db, initializeDatabase }
 
 if (require.main === module) {
   initializeDatabase()

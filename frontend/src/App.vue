@@ -27,9 +27,23 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
     },
   })
 
-  const data = await response.json()
+  if (response.status === 204) {
+    return undefined as T
+  }
+
+  const contentType = response.headers.get('content-type')
+  const data: unknown = contentType?.includes('application/json')
+    ? await response.json()
+    : undefined
   if (!response.ok) {
-    throw new Error(data.error || 'Something went wrong. Please try again.')
+    const message =
+      typeof data === 'object' &&
+      data !== null &&
+      'error' in data &&
+      typeof data.error === 'string'
+        ? data.error
+        : 'Something went wrong. Please try again.'
+    throw new Error(message)
   }
   return data as T
 }
