@@ -32,7 +32,7 @@ npm install --prefix backend
 npm install --prefix frontend
 ```
 
-Copy `.env.example` to `.env` and adjust values if needed. The backend defaults to port `3000` and uses `./database.sqlite` (relative to the project root) when `DATABASE_URL` is unset.
+Copy `.env.example` to `.env` and adjust values if needed. The backend defaults to port `3000` and uses `./database.sqlite3` (relative to the project root) when `DATABASE_URL` is unset.
 
 ## Initialize the database
 
